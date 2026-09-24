@@ -36,7 +36,7 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white
 .bar i{display:block}.tag{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff}
 .lg span{margin-right:14px;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
 @media(max-width:560px){.day{grid-template-columns:1fr}}
-nav{display:none}.chips label{margin-right:10px;white-space:nowrap;cursor:pointer}.chips button{padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font:inherit}.note{background:var(--gl);border-left:4px solid var(--g);border-radius:6px;padding:12px 14px;margin:0 0 16px;font-size:14px}.note p{margin:0 0 8px}.note .cn{border-top:1px dashed var(--g);margin-top:10px;padding-top:10px}.note .cn p:last-child{margin:0}</style>
+nav{display:none}.chips label{margin-right:10px;white-space:nowrap;cursor:pointer}.chips button{padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font:inherit}.note{background:var(--gl);border-left:4px solid var(--g);border-radius:6px;padding:12px 14px;margin:0 0 16px;font-size:14px}.note p{margin:0 0 8px}.note .cn{border-top:1px dashed var(--g);margin-top:10px;padding-top:10px}.note .cn p:last-child{margin:0}.hbox{border:1px solid var(--g);background:var(--gl);border-radius:8px;padding:12px;margin:10px 0}.hbox.bad{border-color:var(--bad);border-width:2px}.hbox label{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);background:#fff;border-radius:6px;margin-top:8px;cursor:pointer}.hbox input{margin-top:4px;width:18px;height:18px;flex:none}</style>
 </head>
 <body>
 <header>
@@ -75,7 +75,9 @@ const ERR={NOT_FOUND:'ไม่พบรหัสพนักงาน กรุ
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=q=>fetch(API,{method:'POST',body:JSON.stringify(q)}).then(r=>r.json());
-const lbl=c=>{const o=OPT.find(x=>x[0]==c);return o?o[1]+' / '+o[2]:c=='PENDING'?'รอตอบ / 待回覆':c};
+const H='2026-10-13';
+const lb=(d,c)=>lbl(c);
+const lbl=c=>{const o=OPT.find(x=>x[0]==c);return o?o[1]+' / '+o[2]:c=='PENDING'?'รอตอบ / 待回覆':c=='WORK_HOLIDAY'?'ประสงค์มาทำงานในวันหยุด / 願意假日出勤':c};
 const fd=d=>+d.slice(8)+' ต.ค. 69 / '+(+d.slice(5,7))+'月'+(+d.slice(8))+'日';
 const err=e=>`<div class="msg err">${ERR[e]||esc(e)}</div>`;
 function tab(n){p1.hidden=n!=1;p2.hidden=n!=2;n1.className=n==1?'on':'';n2.className=n==2?'on':''}
@@ -93,6 +95,10 @@ function form(r){
   if(ex)h+=`<div class="msg">คุณเคยส่งข้อมูลแล้ว สามารถตรวจสอบและแก้ไขข้อมูลได้<br><span class="zh">您已提交過資料，可以確認並修改。</span></div>`;
   h+='<div class="card"><h2>สถานะรายวัน / 每日狀態</h2>';
   D.forEach(d=>{
+    if(d==H){
+      const v=ex?ex.s[d]:'';
+      h+=`<div class="hbox"><b>13 ต.ค. 69 / 10月13日 — วันหยุดนักขัตฤกษ์ / 國定假日</b><p style="margin:6px 0 8px">ขอความร่วมมือพนักงานที่สะดวกมาปฏิบัติงานในวันหยุด วันที่ 13/10 กรุณาเลือกความประสงค์ของท่าน<br>請配合填寫10月13日國定假日出勤意願，方便出勤者請選擇出勤。</p><select data-d="${d}" style="width:100%"><option value="">— เลือก / 請選擇 —</option>${[['WORK_HOLIDAY','ประสงค์มาทำงานในวันหยุด 13/10','願意於10月13日假日出勤']].concat(OPT).map(o=>`<option value="${o[0]}"${v==o[0]?' selected':''}>${o[1]} / ${o[2]}</option>`).join('')}</select></div>`;
+      return}
     if(r.hol[d]){h+=`<div class="day"><b>${fd(d)}</b><span>${lbl(r.hol[d])}</span></div>`;return}
     const v=ex?ex.s[d]:(r.weekly.includes(d)?'WEEKLY_HOLIDAY':'');   // weekly holiday prefilled from Schedules, editable
     h+=`<div class="day"><b>${fd(d)}</b><select data-d="${d}"><option value="">— เลือก / 請選擇 —</option>${OPT.map(o=>`<option value="${o[0]}"${v==o[0]?' selected':''}>${o[1]} / ${o[2]}</option>`).join('')}</select></div>`;
@@ -109,7 +115,7 @@ async function send(){
     const r=await api({a:'submit',id:cur.emp.id,s});if(!r.ok)throw new Error(r.error);
     D.forEach(d=>{if(cur.hol[d])s[d]=cur.hol[d]});
     const e=cur.emp;
-    emp.innerHTML=`<div class="msg"><b>ส่งข้อมูลเรียบร้อยแล้ว</b><br><span class="zh">資料提交成功</span></div><div class="card"><dl><dt>Employee ID</dt><dd>${esc(e.id)}</dd><dt>Full Name</dt><dd>${esc(e.name)}</dd><dt>Department</dt><dd>${esc(e.dept)}</dd><dt>Shift</dt><dd>${esc(e.shift)}</dd><dt>Submitted</dt><dd>${new Date(r.at).toLocaleString('th-TH')}</dd></dl>${D.map(d=>`<div class="day"><b>${fd(d)}</b><span>${lbl(s[d])}</span></div>`).join('')}<p><button class="pri" onclick="find()">แก้ไขข้อมูล / 修改</button></p></div>`;
+    emp.innerHTML=`<div class="msg"><b>ส่งข้อมูลเรียบร้อยแล้ว</b><br><span class="zh">資料提交成功</span></div><div class="card"><dl><dt>Employee ID</dt><dd>${esc(e.id)}</dd><dt>Full Name</dt><dd>${esc(e.name)}</dd><dt>Department</dt><dd>${esc(e.dept)}</dd><dt>Shift</dt><dd>${esc(e.shift)}</dd><dt>Submitted</dt><dd>${new Date(r.at).toLocaleString('th-TH')}</dd></dl>${D.map(d=>`<div class="day"><b>${fd(d)}</b><span>${lb(d,s[d])}</span></div>`).join('')}<p><button class="pri" onclick="find()">แก้ไขข้อมูล / 修改</button></p></div>`;
   }catch(e){fm.innerHTML=err(e.message);sb.disabled=false}
 }
 
@@ -125,6 +131,7 @@ const tbl=(h,g,ds)=>{
   if(ds.length==1)return`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th><th>Working</th><th>Leave/Holiday</th><th>Pending</th><th>Working %</th><th></th></tr>${ks.map(k=>{const o=g[k][0];return`<tr><td>${esc(k)}</td><td>${o.t}</td><td>${o.w}</td><td>${o.l}</td><td>${o.p}</td><td>${pc(o.w,o.t)}</td><td>${bar(o)}</td></tr>`}).join('')}</table></div>`;
   return`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th>${ds.map(d=>`<th>${sd(d)}</th>`).join('')}</tr>${ks.map(k=>`<tr><td>${esc(k)}</td><td>${g[k][0].t}</td>${g[k].map(o=>`<td>${cell(o,F.m)}</td>`).join('')}</tr>`).join('')}</table></div>`;
 };
+const WB=(dl,ds)=>`<h3>Working Breakdown</h3><div class="wrap"><table><tr><th></th>${ds.map(d=>`<th>${sd(d)}</th>`).join('')}</tr>${[['WORK','มาทำงานปกติ / 正常出勤'],['WORK_HOLIDAY','ประสงค์มาทำงานในวันหยุด / 願意假日出勤']].map(o=>`<tr><td>${o[1]}</td>${dl.map(x=>`<td>${(x.wt||{})[o[0]]||0}</td>`).join('')}</tr>`).join('')}</table></div>`;
 const sel=(k,arr)=>`<select onchange="F.${k}=this.value;dash()"><option value="">${k}: All</option>${arr.map(v=>`<option${F[k]==v?' selected':''}>${esc(v)}</option>`).join('')}</select>`;
 const tg=(d,on)=>{F.dates=D.filter(x=>x==d?on:F.dates.includes(x));if(!F.dates.length)F.dates=[d];dash()};
 
@@ -145,6 +152,7 @@ async function dash(){
     <div class="lg"><span><i style="background:var(--w)"></i>Working / มาทำงาน</span><span><i style="background:var(--l)"></i>Leave/Holiday / ลา-หยุด</span><span><i style="background:var(--p)"></i>Pending / รอตอบ</span></div>
     <h3>Daily Workforce Summary</h3><div class="wrap"><table><tr><th>Date</th><th>Total</th><th>Working</th><th>Working %</th><th>Leave/Holiday</th><th>Leave %</th><th>Pending</th><th></th></tr>${dl.map(o=>`<tr><td>${sd(o.date)}</td><td>${o.t}</td><td>${o.w}</td><td>${pc(o.w,o.t)}</td><td>${o.l}</td><td>${pc(o.l,o.t)}</td><td>${o.p}</td><td>${bar(o)}</td></tr>`).join('')}</table></div>`;
     h+=tbl('Shift',r.shift,ds)+tbl('DL / IDL',r.type,ds)+tbl('Type × Shift',r.matrix,ds)+tbl('Department',r.dept,ds);
+    h+=WB(dl,ds);
     h+=`<h3>Leave Type Breakdown</h3><div class="wrap"><table><tr><th></th>${ds.map(d=>`<th>${sd(d)}</th>`).join('')}</tr>${OPT.slice(1).map(o=>`<tr><td>${o[1]} / ${o[2]}</td>${dl.map(x=>`<td>${x.lt[o[0]]||0}</td>`).join('')}</tr>`).join('')}</table></div>`;
     if(r.role=='HR')h+=`<h3>Employees</h3><div class="row"><input id="q" placeholder="ID / ชื่อ / Name"><button class="pri" onclick="lst('pending',0)">Pending list</button><button class="pri" onclick="lst('detail',0)">Employee detail</button></div><div id="lst"></div>`;
     dsh.innerHTML=h;
@@ -177,10 +185,11 @@ function wbBuild(ExcelJS,r,ls){
     add(name,hd,Object.keys(g).sort().map(k=>{const a=g[k],x=[k,a[0].t];a.forEach(o=>x.push(o.w,o.l,o.p,R(o.w,o.t)));return x}),D.map((_,i)=>5+i*4));
   };
   G('Shift Summary','Shift',r.shift);G('DL-IDL Summary','Employee Type',r.type);G('Type x Shift','Type / Shift',r.matrix);G('Department Summary','Department',r.dept);
+  add('Working Breakdown',['Working type'].concat(D.map(so)),[['WORK','มาทำงานปกติ / 正常出勤'],['WORK_HOLIDAY','ประสงค์มาทำงานในวันหยุด / 願意假日出勤']].map(o=>[o[1]].concat(r.daily.map(x=>(x.wt||{})[o[0]]||0))));
   add('Leave Breakdown',['Leave type'].concat(D.map(so)),OPT.slice(1).map(o=>[o[1]+' / '+o[2]].concat(r.daily.map(x=>x.lt[o[0]]||0))));
   if(ls){
     add('Pending Employees',['Employee ID','Full Name','Type','Department','Shift'],ls.p);
-    add('Employee Detail',['Employee ID','Full Name','Type','Department','Shift'].concat(D.map(so)),ls.d.map(x=>x.slice(0,5).concat(x.slice(5).map(lbl))));
+    add('Employee Detail',['Employee ID','Full Name','Type','Department','Shift'].concat(D.map(so)),ls.d.map(x=>x.slice(0,5).concat(x.slice(5).map((v,i)=>lb(D[i],v)))));
   }
   return wb;
 }
@@ -204,7 +213,7 @@ async function lst(mode,page){
   try{
     const r=await api({a:'list',pin:pin.value,mode,page,q:q.value,shift:F.shift,type:F.type,dept:F.dept});if(!r.ok)throw new Error(r.error);
     const hd=['ID','Name','Type','Department','Shift'].concat(mode=='detail'?D.map(d=>+d.slice(8)+' Oct'):[]);
-    box.innerHTML=`<p>${r.total} รายการ / 筆</p><div class="wrap"><table><tr>${hd.map(x=>`<th>${x}</th>`).join('')}</tr>${r.rows.length?r.rows.map(x=>`<tr>${x.map(v=>`<td>${esc(mode=='detail'&&v.length>5&&v==v.toUpperCase()?lbl(v):v)}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="9">ไม่มีข้อมูล / 無資料</td></tr>'}</table></div>
+    box.innerHTML=`<p>${r.total} รายการ / 筆</p><div class="wrap"><table><tr>${hd.map(x=>`<th>${x}</th>`).join('')}</tr>${r.rows.length?r.rows.map(x=>`<tr>${x.map((v,ci)=>`<td>${esc(mode=='detail'&&ci>=5?lb(D[ci-5],v):v)}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="9">ไม่มีข้อมูล / 無資料</td></tr>'}</table></div>
     <div class="row" style="margin-top:8px">${r.page>0?`<button class="pri" onclick="lst('${mode}',${r.page-1})">‹</button>`:''}${(r.page+1)*50<r.total?`<button class="pri" onclick="lst('${mode}',${r.page+1})">›</button>`:''}<button onclick="csv()">CSV</button></div>`;
   }catch(e){box.innerHTML=err(e.message)}
 }
