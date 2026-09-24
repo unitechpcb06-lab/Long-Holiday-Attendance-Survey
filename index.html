@@ -4,10 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Long Holiday Attendance Survey · UNITECH PCB</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600&display=swap">
 <style>
 :root{--g:#0f5c4a;--gl:#e6f2ee;--ink:#1b2622;--mute:#5d6b66;--line:#d9e1de;--w:#0f7a5c;--l:#3b6ea5;--p:#b8742a;--bad:#b3261e}
-*{box-sizing:border-box}body{margin:0;font:15px/1.5 "Noto Sans Thai","Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:#fff}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,"Leelawadee UI",Tahoma,"Noto Sans Thai","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;color:var(--ink);background:#fff}
 header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 header b{font-size:17px}header small{opacity:.85;display:block}
 nav button{background:none;border:1px solid #ffffff88;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;margin-left:6px}
@@ -129,6 +128,7 @@ async function lst(mode,page){
   }catch(e){box.innerHTML=err(e.message)}
 }
 const lst_={set innerHTML(v){}};
+api({a:'ping'}).catch(()=>{});   // wake the backend while the user reads the page
 function csv(){
   const rows=[...document.querySelectorAll('#lst tr')].map(tr=>[...tr.children].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(','));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'}));a.download='holiday-survey.csv';a.click();
