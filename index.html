@@ -31,7 +31,7 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white
 .bar i{display:block}.tag{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff}
 .lg span{margin-right:14px;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
 @media(max-width:560px){.day{grid-template-columns:1fr}}
-nav{display:none}</style>
+nav{display:none}.chips label{margin-right:10px;white-space:nowrap;cursor:pointer}.chips button{padding:3px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font:inherit}</style>
 </head>
 <body>
 <header>
@@ -97,24 +97,37 @@ async function send(){
 }
 
 /* ---------- HR / Management ---------- */
-let F={date:D[0],shift:'',type:'',dept:''};
+let F={dates:D.slice(),shift:'',type:'',dept:'',m:'w'};
 const pc=(a,b)=>b?(a/b*100).toFixed(2)+'%':'0.00%';
 const bar=o=>o.t?`<div class="bar"><i style="width:${o.w/o.t*100}%;background:var(--w)"></i><i style="width:${o.l/o.t*100}%;background:var(--l)"></i><i style="width:${o.p/o.t*100}%;background:var(--p)"></i></div>`:'';
-const tbl=(h,m)=>`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th><th>Working</th><th>Leave/Holiday</th><th>Pending</th><th>Working %</th><th></th></tr>${Object.keys(m).sort().map(k=>{const o=m[k];return`<tr><td>${esc(k)}</td><td>${o.t}</td><td>${o.w}</td><td>${o.l}</td><td>${o.p}</td><td>${pc(o.w,o.t)}</td><td>${bar(o)}</td></tr>`}).join('')}</table></div>`;
+const sd=d=>+d.slice(8)+' ต.ค.';
+const MT=[['w','จำนวนมาทำงาน / 出勤人數'],['wp','% มาทำงาน / 出勤率'],['l','ลา-หยุด / 請假放假'],['p','รอตอบ / 待回覆']];
+const cell=(o,m)=>m=='w'?o.w:m=='wp'?pc(o.w,o.t):m=='l'?o.l:o.p;
+const tbl=(h,g,ds)=>{
+  const ks=Object.keys(g).sort();
+  if(ds.length==1)return`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th><th>Working</th><th>Leave/Holiday</th><th>Pending</th><th>Working %</th><th></th></tr>${ks.map(k=>{const o=g[k][0];return`<tr><td>${esc(k)}</td><td>${o.t}</td><td>${o.w}</td><td>${o.l}</td><td>${o.p}</td><td>${pc(o.w,o.t)}</td><td>${bar(o)}</td></tr>`}).join('')}</table></div>`;
+  return`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th>${ds.map(d=>`<th>${sd(d)}</th>`).join('')}</tr>${ks.map(k=>`<tr><td>${esc(k)}</td><td>${g[k][0].t}</td>${g[k].map(o=>`<td>${cell(o,F.m)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+};
 const sel=(k,arr)=>`<select onchange="F.${k}=this.value;dash()"><option value="">${k}: All</option>${arr.map(v=>`<option${F[k]==v?' selected':''}>${esc(v)}</option>`).join('')}</select>`;
+const tg=(d,on)=>{F.dates=D.filter(x=>x==d?on:F.dates.includes(x));if(!F.dates.length)F.dates=[d];dash()};
 
 async function dash(){
   dsh.innerHTML='<p class="zh">กำลังโหลด… / 載入中…</p>';
   try{
-    const r=await api({a:'dash',pin:pin.value,...F});if(!r.ok)throw new Error(r.error);
-    const t=r.day,resp=t.w+t.l;
+    const r=await api({a:'dash',pin:pin.value,dates:F.dates,shift:F.shift,type:F.type,dept:F.dept});if(!r.ok)throw new Error(r.error);
+    const ds=r.dates,dl=ds.map(x=>r.daily[D.indexOf(x)]),one=ds.length==1,t0=dl[0];
+    let k;
+    if(one)k=[['TOTAL EMPLOYEES',t0.t,''],['CONFIRMED WORKING',t0.w,'var(--w)'],['LEAVE / HOLIDAY',t0.l,'var(--l)'],['PENDING',t0.p,'var(--p)'],['WORKING RATE',pc(t0.w,t0.t),''],['RESPONSE RATE',pc(t0.w+t0.l,t0.t),'']];
+    else{const lo=dl.reduce((a,b)=>b.w<a.w?b:a),hi=dl.reduce((a,b)=>b.w>a.w?b:a);
+      k=[['TOTAL EMPLOYEES',t0.t,''],['PENDING',t0.p,'var(--p)'],['RESPONSE RATE',pc(t0.t-t0.p,t0.t),''],['LOWEST WORKING · '+sd(lo.date),lo.w+' ('+pc(lo.w,lo.t)+')','var(--bad)'],['HIGHEST WORKING · '+sd(hi.date),hi.w+' ('+pc(hi.w,hi.t)+')','var(--w)']];}
     let h=`<h2>LONG HOLIDAY WORKFORCE SUMMARY <span class="zh">· 08–15 OCTOBER 2026</span></h2>
-    <div class="row"><select onchange="F.date=this.value;dash()">${D.map(d=>`<option value="${d}"${F.date==d?' selected':''}>${fd(d)}</option>`).join('')}</select>${sel('shift',r.opts.shift)}${sel('type',r.opts.type)}${sel('dept',r.opts.dept)}</div>
-    <div class="kpi"><div><span>TOTAL EMPLOYEES</span><b>${t.t}</b></div><div><span>CONFIRMED WORKING</span><b style="color:var(--w)">${t.w}</b></div><div><span>LEAVE / HOLIDAY</span><b style="color:var(--l)">${t.l}</b></div><div><span>PENDING</span><b style="color:var(--p)">${t.p}</b></div><div><span>WORKING RATE</span><b>${pc(t.w,t.t)}</b></div><div><span>RESPONSE RATE</span><b>${pc(resp,t.t)}</b></div></div>
+    <div class="chips"><b>วันที่ / 日期:</b> ${D.map(d=>`<label><input type="checkbox" ${F.dates.includes(d)?'checked':''} onchange="tg('${d}',this.checked)"> ${sd(d)}</label>`).join('')}<button onclick="F.dates=D.slice();dash()">ทุกวัน / 全部</button></div>
+    <div class="row" style="margin-top:8px">${sel('shift',r.opts.shift)}${sel('type',r.opts.type)}${sel('dept',r.opts.dept)}${one?'':`<select onchange="F.m=this.value;dash()">${MT.map(x=>`<option value="${x[0]}"${F.m==x[0]?' selected':''}>${x[1]}</option>`).join('')}</select>`}</div>
+    <div class="kpi">${k.map(x=>`<div><span>${x[0]}</span><b${x[2]?` style="color:${x[2]}"`:''}>${x[1]}</b></div>`).join('')}</div>
     <div class="lg"><span><i style="background:var(--w)"></i>Working / มาทำงาน</span><span><i style="background:var(--l)"></i>Leave/Holiday / ลา-หยุด</span><span><i style="background:var(--p)"></i>Pending / รอตอบ</span></div>
-    <h3>Daily Workforce Summary</h3><div class="wrap"><table><tr><th>Date</th><th>Total</th><th>Working</th><th>Working %</th><th>Leave/Holiday</th><th>Leave %</th><th>Pending</th><th></th></tr>${r.daily.map(o=>`<tr><td>${fd(o.date)}</td><td>${o.t}</td><td>${o.w}</td><td>${pc(o.w,o.t)}</td><td>${o.l}</td><td>${pc(o.l,o.t)}</td><td>${o.p}</td><td>${bar(o)}</td></tr>`).join('')}</table></div>`;
-    h+=tbl('Shift',r.shift)+tbl('DL / IDL',r.type)+tbl('Type × Shift',r.matrix)+tbl('Department',r.dept);
-    h+=`<h3>Leave Type Breakdown · ${fd(r.date)}</h3><div class="wrap"><table>${OPT.slice(1).map(o=>`<tr><td>${o[1]} / ${o[2]}</td><td>${t.lt[o[0]]||0}</td></tr>`).join('')}</table></div>`;
+    <h3>Daily Workforce Summary</h3><div class="wrap"><table><tr><th>Date</th><th>Total</th><th>Working</th><th>Working %</th><th>Leave/Holiday</th><th>Leave %</th><th>Pending</th><th></th></tr>${dl.map(o=>`<tr><td>${sd(o.date)}</td><td>${o.t}</td><td>${o.w}</td><td>${pc(o.w,o.t)}</td><td>${o.l}</td><td>${pc(o.l,o.t)}</td><td>${o.p}</td><td>${bar(o)}</td></tr>`).join('')}</table></div>`;
+    h+=tbl('Shift',r.shift,ds)+tbl('DL / IDL',r.type,ds)+tbl('Type × Shift',r.matrix,ds)+tbl('Department',r.dept,ds);
+    h+=`<h3>Leave Type Breakdown</h3><div class="wrap"><table><tr><th></th>${ds.map(d=>`<th>${sd(d)}</th>`).join('')}</tr>${OPT.slice(1).map(o=>`<tr><td>${o[1]} / ${o[2]}</td>${dl.map(x=>`<td>${x.lt[o[0]]||0}</td>`).join('')}</tr>`).join('')}</table></div>`;
     if(r.role=='HR')h+=`<h3>Employees</h3><div class="row"><input id="q" placeholder="ID / ชื่อ / Name"><button class="pri" onclick="lst('pending',0)">Pending list</button><button class="pri" onclick="lst('detail',0)">Employee detail</button></div><div id="lst"></div>`;
     dsh.innerHTML=h;
   }catch(e){dsh.innerHTML=err(e.message)}
