@@ -31,7 +31,7 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white
 .bar i{display:block}.tag{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff}
 .lg span{margin-right:14px;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
 @media(max-width:560px){.day{grid-template-columns:1fr}}
-</style>
+nav{display:none}</style>
 </head>
 <body>
 <header>
@@ -45,6 +45,7 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white
   <div id="emp"></div>
 </section>
 <section id="p2" hidden>
+  <p class="zh">สำหรับ HR และผู้บริหารเท่านั้น / 僅限 HR 與主管使用</p>
   <div class="row"><input id="pin" type="password" placeholder="PIN" style="width:180px" onkeydown="if(event.key=='Enter')dash()"><button class="pri" onclick="dash()">เข้าสู่ระบบ / 登入</button></div>
   <div id="dsh"></div>
 </section>
@@ -128,6 +129,7 @@ async function lst(mode,page){
   }catch(e){box.innerHTML=err(e.message)}
 }
 const lst_={set innerHTML(v){}};
+function route(){tab(location.hash=='#staff'?2:1)}addEventListener('hashchange',route);route();
 api({a:'ping'}).catch(()=>{});   // wake the backend while the user reads the page
 function csv(){
   const rows=[...document.querySelectorAll('#lst tr')].map(tr=>[...tr.children].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(','));
