@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long Holiday Attendance Survey · UNITECH PCB</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&family=Noto+Sans+TC:wght@400;600&display=swap">
+<style>
+:root{--g:#0f5c4a;--gl:#e6f2ee;--ink:#1b2622;--mute:#5d6b66;--line:#d9e1de;--w:#0f7a5c;--l:#3b6ea5;--p:#b8742a;--bad:#b3261e}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 "Noto Sans Thai","Noto Sans TC",system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+header b{font-size:17px}header small{opacity:.85;display:block}
+nav button{background:none;border:1px solid #ffffff88;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;margin-left:6px}
+nav button.on{background:#fff;color:var(--g)}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+h2{margin:0 0 10px;font-size:19px}h3{margin:22px 0 8px;font-size:16px}
+.zh{color:var(--mute);font-size:.9em}
+input,select{font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px;min-width:0}
+button.pri{background:var(--g);color:#fff;border:0;padding:10px 20px;border-radius:6px;font:inherit;font-weight:600;cursor:pointer}
+button.pri:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0}
+dl{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;margin:0}dt{color:var(--mute)}dd{margin:0;font-weight:600}
+.day{display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.day select{width:100%}
+.msg{padding:10px 12px;border-radius:6px;margin:10px 0;background:var(--gl)}.msg.err{background:#fbe9e7;color:var(--bad)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.kpi div{border:1px solid var(--line);border-radius:8px;padding:10px 12px}.kpi span{display:block;color:var(--mute);font-size:13px}.kpi b{font-size:26px}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:var(--gl)}
+.bar{display:flex;height:12px;min-width:160px;border-radius:3px;overflow:hidden;background:var(--line)}
+.bar i{display:block}.tag{font-size:12px;padding:2px 6px;border-radius:4px;color:#fff}
+.lg span{margin-right:14px;font-size:13px}.lg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
+@media(max-width:560px){.day{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><b>LONG HOLIDAY ATTENDANCE SURVEY</b><small>แบบสำรวจการมาทำงานและการลาในช่วงวันหยุดยาว · 長假出勤與請假調查</small></div>
+  <nav><button id="n1" class="on" onclick="tab(1)">พนักงาน / 員工</button><button id="n2" onclick="tab(2)">HR / Management</button></nav>
+</header>
+<main>
+<section id="p1">
+  <h2>08–15 ต.ค. 2026 <span class="zh">(10月8日–15日)</span></h2>
+  <div class="row"><input id="eid" placeholder="รหัสพนักงาน / 員工編號" inputmode="numeric" style="width:220px" onkeydown="if(event.key=='Enter')find()"><button class="pri" id="fb" onclick="find()">ค้นหา / 查詢</button></div>
+  <div id="emp"></div>
+</section>
+<section id="p2" hidden>
+  <div class="row"><input id="pin" type="password" placeholder="PIN" style="width:180px" onkeydown="if(event.key=='Enter')dash()"><button class="pri" onclick="dash()">เข้าสู่ระบบ / 登入</button></div>
+  <div id="dsh"></div>
+</section>
+</main>
+<script>
+const API='PASTE_WEB_APP_URL_HERE';   // Apps Script Web app URL (ends with /exec)
+const D=['2026-10-08','2026-10-09','2026-10-10','2026-10-11','2026-10-12','2026-10-13','2026-10-14','2026-10-15'];
+const OPT=[['WORK','มาทำงานปกติ','正常出勤'],['BUSINESS_LEAVE','ลากิจ','事假'],['ANNUAL_LEAVE','ลาพักร้อนประจำปี','特別休假'],['UNPAID_LEAVE','ลาไม่รับค่าจ้าง','無薪假'],['WEEKLY_HOLIDAY','วันหยุดประจำสัปดาห์','例假日'],['TRADITIONAL_HOLIDAY','วันหยุดประเพณี / หยุดชดเชย','國定假日／補假']];
+const ERR={NOT_FOUND:'ไม่พบรหัสพนักงาน กรุณาตรวจสอบอีกครั้ง<br><span class="zh">找不到員工編號，請確認後再試。</span>',INCOMPLETE:'กรุณาเลือกสถานะให้ครบทุกวัน<br><span class="zh">請完整選擇每一天的狀態。</span>',AUTH:'PIN ไม่ถูกต้อง / PIN 錯誤',FORBIDDEN:'ไม่มีสิทธิ์ / 無權限'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=q=>fetch(API,{method:'POST',body:JSON.stringify(q)}).then(r=>r.json());
+const lbl=c=>{const o=OPT.find(x=>x[0]==c);return o?o[1]+' / '+o[2]:c=='PENDING'?'รอตอบ / 待回覆':c};
+const fd=d=>+d.slice(8)+' ต.ค. 2026';
+const err=e=>`<div class="msg err">${ERR[e]||esc(e)}</div>`;
+function tab(n){p1.hidden=n!=1;p2.hidden=n!=2;n1.className=n==1?'on':'';n2.className=n==2?'on':''}
+let cur=null;
+
+async function find(){
+  const id=eid.value.trim();if(!id)return;fb.disabled=true;emp.innerHTML='<p class="zh">กำลังโหลด… / 載入中…</p>';
+  try{const r=await api({a:'lookup',id});if(!r.ok)throw new Error(r.error);cur=r;form(r)}
+  catch(e){emp.innerHTML=err(e.message)}
+  fb.disabled=false;
+}
+function form(r){
+  const e=r.emp,ex=r.existing;
+  let h=`<div class="card"><dl><dt>Employee ID</dt><dd>${esc(e.id)}</dd><dt>Full Name</dt><dd>${esc(e.name)}</dd><dt>Employee Type</dt><dd>${esc(e.type)}</dd><dt>Department</dt><dd>${esc(e.dept)}</dd><dt>Shift</dt><dd>${esc(e.shift)}</dd></dl></div>`;
+  if(ex)h+=`<div class="msg">คุณเคยส่งข้อมูลแล้ว สามารถตรวจสอบและแก้ไขข้อมูลได้<br><span class="zh">您已提交過資料，可以確認並修改。</span></div>`;
+  h+='<div class="card"><h2>สถานะรายวัน / 每日狀態</h2>';
+  D.forEach(d=>{
+    if(r.hol[d]){h+=`<div class="day"><b>${fd(d)}</b><span>${lbl(r.hol[d])}</span></div>`;return}
+    const v=ex?ex.s[d]:(r.weekly.includes(d)?'WEEKLY_HOLIDAY':'');   // weekly holiday prefilled from Schedules, editable
+    h+=`<div class="day"><b>${fd(d)}</b><select data-d="${d}"><option value="">— เลือก / 請選擇 —</option>${OPT.map(o=>`<option value="${o[0]}"${v==o[0]?' selected':''}>${o[1]} / ${o[2]}</option>`).join('')}</select></div>`;
+  });
+  h+='<div id="fm"></div><button class="pri" id="sb" onclick="send()">ส่งข้อมูล / 提交</button></div>';
+  emp.innerHTML=h;
+}
+async function send(){
+  const s={};let bad=0;
+  document.querySelectorAll('select[data-d]').forEach(x=>{s[x.dataset.d]=x.value;x.style.borderColor=x.value?'':'var(--bad)';if(!x.value)bad++});
+  if(bad){fm.innerHTML=err('INCOMPLETE');return}
+  sb.disabled=true;fm.innerHTML='';
+  try{
+    const r=await api({a:'submit',id:cur.emp.id,s});if(!r.ok)throw new Error(r.error);
+    D.forEach(d=>{if(cur.hol[d])s[d]=cur.hol[d]});
+    const e=cur.emp;
+    emp.innerHTML=`<div class="msg"><b>ส่งข้อมูลเรียบร้อยแล้ว</b><br><span class="zh">資料提交成功</span></div><div class="card"><dl><dt>Employee ID</dt><dd>${esc(e.id)}</dd><dt>Full Name</dt><dd>${esc(e.name)}</dd><dt>Department</dt><dd>${esc(e.dept)}</dd><dt>Shift</dt><dd>${esc(e.shift)}</dd><dt>Submitted</dt><dd>${new Date(r.at).toLocaleString('th-TH')}</dd></dl>${D.map(d=>`<div class="day"><b>${fd(d)}</b><span>${lbl(s[d])}</span></div>`).join('')}<p><button class="pri" onclick="find()">แก้ไขข้อมูล / 修改</button></p></div>`;
+  }catch(e){fm.innerHTML=err(e.message);sb.disabled=false}
+}
+
+/* ---------- HR / Management ---------- */
+let F={date:D[0],shift:'',type:'',dept:''};
+const pc=(a,b)=>b?(a/b*100).toFixed(2)+'%':'0.00%';
+const bar=o=>o.t?`<div class="bar"><i style="width:${o.w/o.t*100}%;background:var(--w)"></i><i style="width:${o.l/o.t*100}%;background:var(--l)"></i><i style="width:${o.p/o.t*100}%;background:var(--p)"></i></div>`:'';
+const tbl=(h,m)=>`<h3>${h}</h3><div class="wrap"><table><tr><th></th><th>Total</th><th>Working</th><th>Leave/Holiday</th><th>Pending</th><th>Working %</th><th></th></tr>${Object.keys(m).sort().map(k=>{const o=m[k];return`<tr><td>${esc(k)}</td><td>${o.t}</td><td>${o.w}</td><td>${o.l}</td><td>${o.p}</td><td>${pc(o.w,o.t)}</td><td>${bar(o)}</td></tr>`}).join('')}</table></div>`;
+const sel=(k,arr)=>`<select onchange="F.${k}=this.value;dash()"><option value="">${k}: All</option>${arr.map(v=>`<option${F[k]==v?' selected':''}>${esc(v)}</option>`).join('')}</select>`;
+
+async function dash(){
+  dsh.innerHTML='<p class="zh">กำลังโหลด… / 載入中…</p>';
+  try{
+    const r=await api({a:'dash',pin:pin.value,...F});if(!r.ok)throw new Error(r.error);
+    const t=r.day,resp=t.w+t.l;
+    let h=`<h2>LONG HOLIDAY WORKFORCE SUMMARY <span class="zh">· 08–15 OCTOBER 2026</span></h2>
+    <div class="row"><select onchange="F.date=this.value;dash()">${D.map(d=>`<option value="${d}"${F.date==d?' selected':''}>${fd(d)}</option>`).join('')}</select>${sel('shift',r.opts.shift)}${sel('type',r.opts.type)}${sel('dept',r.opts.dept)}</div>
+    <div class="kpi"><div><span>TOTAL EMPLOYEES</span><b>${t.t}</b></div><div><span>CONFIRMED WORKING</span><b style="color:var(--w)">${t.w}</b></div><div><span>LEAVE / HOLIDAY</span><b style="color:var(--l)">${t.l}</b></div><div><span>PENDING</span><b style="color:var(--p)">${t.p}</b></div><div><span>WORKING RATE</span><b>${pc(t.w,t.t)}</b></div><div><span>RESPONSE RATE</span><b>${pc(resp,t.t)}</b></div></div>
+    <div class="lg"><span><i style="background:var(--w)"></i>Working / มาทำงาน</span><span><i style="background:var(--l)"></i>Leave/Holiday / ลา-หยุด</span><span><i style="background:var(--p)"></i>Pending / รอตอบ</span></div>
+    <h3>Daily Workforce Summary</h3><div class="wrap"><table><tr><th>Date</th><th>Total</th><th>Working</th><th>Working %</th><th>Leave/Holiday</th><th>Leave %</th><th>Pending</th><th></th></tr>${r.daily.map(o=>`<tr><td>${fd(o.date)}</td><td>${o.t}</td><td>${o.w}</td><td>${pc(o.w,o.t)}</td><td>${o.l}</td><td>${pc(o.l,o.t)}</td><td>${o.p}</td><td>${bar(o)}</td></tr>`).join('')}</table></div>`;
+    h+=tbl('Shift',r.shift)+tbl('DL / IDL',r.type)+tbl('Type × Shift',r.matrix)+tbl('Department',r.dept);
+    h+=`<h3>Leave Type Breakdown · ${fd(r.date)}</h3><div class="wrap"><table>${OPT.slice(1).map(o=>`<tr><td>${o[1]} / ${o[2]}</td><td>${t.lt[o[0]]||0}</td></tr>`).join('')}</table></div>`;
+    if(r.role=='HR')h+=`<h3>Employees</h3><div class="row"><input id="q" placeholder="ID / ชื่อ / Name"><button class="pri" onclick="lst('pending',0)">Pending list</button><button class="pri" onclick="lst('detail',0)">Employee detail</button></div><div id="lst"></div>`;
+    dsh.innerHTML=h;
+  }catch(e){dsh.innerHTML=err(e.message)}
+}
+async function lst(mode,page){
+  lst_.innerHTML='';const box=document.getElementById('lst');box.innerHTML='<p class="zh">กำลังโหลด… / 載入中…</p>';
+  try{
+    const r=await api({a:'list',pin:pin.value,mode,page,q:q.value,shift:F.shift,type:F.type,dept:F.dept});if(!r.ok)throw new Error(r.error);
+    const hd=['ID','Name','Type','Department','Shift'].concat(mode=='detail'?D.map(d=>+d.slice(8)+' Oct'):[]);
+    box.innerHTML=`<p>${r.total} รายการ / 筆</p><div class="wrap"><table><tr>${hd.map(x=>`<th>${x}</th>`).join('')}</tr>${r.rows.length?r.rows.map(x=>`<tr>${x.map(v=>`<td>${esc(mode=='detail'&&v.length>5&&v==v.toUpperCase()?lbl(v):v)}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="9">ไม่มีข้อมูล / 無資料</td></tr>'}</table></div>
+    <div class="row" style="margin-top:8px">${r.page>0?`<button class="pri" onclick="lst('${mode}',${r.page-1})">‹</button>`:''}${(r.page+1)*50<r.total?`<button class="pri" onclick="lst('${mode}',${r.page+1})">›</button>`:''}<button onclick="csv()">CSV</button></div>`;
+  }catch(e){box.innerHTML=err(e.message)}
+}
+const lst_={set innerHTML(v){}};
+function csv(){
+  const rows=[...document.querySelectorAll('#lst tr')].map(tr=>[...tr.children].map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(','));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'}));a.download='holiday-survey.csv';a.click();
+}
+</script>
+</body>
+</html>
