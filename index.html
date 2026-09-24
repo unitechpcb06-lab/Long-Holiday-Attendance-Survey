@@ -20,7 +20,7 @@ button.pri:disabled{opacity:.5}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .card{border:1px solid var(--line);border-radius:8px;padding:14px;margin:12px 0}
 dl{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;margin:0}dt{color:var(--mute)}dd{margin:0;font-weight:600}
-.day{display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.day{display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .day select{width:100%}
 .msg{padding:10px 12px;border-radius:6px;margin:10px 0;background:var(--gl)}.msg.err{background:#fbe9e7;color:var(--bad)}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
@@ -40,7 +40,7 @@ nav{display:none}.chips label{margin-right:10px;white-space:nowrap;cursor:pointe
 </header>
 <main>
 <section id="p1">
-  <h2>08–15 ต.ค. 2026 <span class="zh">(10月8日–15日)</span></h2>
+  <h2>10–14 ต.ค. 69 <span class="zh">(10月10日–14日)</span></h2>
   <div class="row"><input id="eid" placeholder="รหัสพนักงาน / 員工編號" inputmode="numeric" style="width:220px" onkeydown="if(event.key=='Enter')find()"><button class="pri" id="fb" onclick="find()">ค้นหา / 查詢</button></div>
   <div id="emp"></div>
 </section>
@@ -52,14 +52,14 @@ nav{display:none}.chips label{margin-right:10px;white-space:nowrap;cursor:pointe
 </main>
 <script>
 const API='https://script.google.com/macros/s/AKfycbyhrxZWGREBMXbwYFhPwlR_XKy8r96FxaTfsgZ9kFCoBiIeEEEy90zjcCs6DzpweaOx/exec';   // Apps Script Web app URL (ends with /exec)
-const D=['2026-10-08','2026-10-09','2026-10-10','2026-10-11','2026-10-12','2026-10-13','2026-10-14','2026-10-15'];
+const D=['2026-10-10','2026-10-11','2026-10-12','2026-10-13','2026-10-14'];
 const OPT=[['WORK','มาทำงานปกติ','正常出勤'],['BUSINESS_LEAVE','ลากิจ','事假'],['ANNUAL_LEAVE','ลาพักร้อนประจำปี','特別休假'],['UNPAID_LEAVE','ลาไม่รับค่าจ้าง','無薪假'],['WEEKLY_HOLIDAY','วันหยุดประจำสัปดาห์','例假日'],['TRADITIONAL_HOLIDAY','วันหยุดประเพณี / หยุดชดเชย','國定假日／補假']];
 const ERR={NOT_FOUND:'ไม่พบรหัสพนักงาน กรุณาตรวจสอบอีกครั้ง<br><span class="zh">找不到員工編號，請確認後再試。</span>',INCOMPLETE:'กรุณาเลือกสถานะให้ครบทุกวัน<br><span class="zh">請完整選擇每一天的狀態。</span>',AUTH:'PIN ไม่ถูกต้อง / PIN 錯誤',FORBIDDEN:'ไม่มีสิทธิ์ / 無權限'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=q=>fetch(API,{method:'POST',body:JSON.stringify(q)}).then(r=>r.json());
 const lbl=c=>{const o=OPT.find(x=>x[0]==c);return o?o[1]+' / '+o[2]:c=='PENDING'?'รอตอบ / 待回覆':c};
-const fd=d=>+d.slice(8)+' ต.ค. 2026';
+const fd=d=>+d.slice(8)+' ต.ค. 69 / '+(+d.slice(5,7))+'月'+(+d.slice(8))+'日';
 const err=e=>`<div class="msg err">${ERR[e]||esc(e)}</div>`;
 function tab(n){p1.hidden=n!=1;p2.hidden=n!=2;n1.className=n==1?'on':'';n2.className=n==2?'on':''}
 let cur=null;
@@ -100,7 +100,7 @@ async function send(){
 let F={dates:D.slice(),shift:'',type:'',dept:'',m:'w'};
 const pc=(a,b)=>b?(a/b*100).toFixed(2)+'%':'0.00%';
 const bar=o=>o.t?`<div class="bar"><i style="width:${o.w/o.t*100}%;background:var(--w)"></i><i style="width:${o.l/o.t*100}%;background:var(--l)"></i><i style="width:${o.p/o.t*100}%;background:var(--p)"></i></div>`:'';
-const sd=d=>+d.slice(8)+' ต.ค.';
+const sd=d=>+d.slice(8)+' ต.ค. / '+(+d.slice(5,7))+'月'+(+d.slice(8))+'日';
 const MT=[['w','จำนวนมาทำงาน / 出勤人數'],['wp','% มาทำงาน / 出勤率'],['l','ลา-หยุด / 請假放假'],['p','รอตอบ / 待回覆']];
 const cell=(o,m)=>m=='w'?o.w:m=='wp'?pc(o.w,o.t):m=='l'?o.l:o.p;
 const tbl=(h,g,ds)=>{
@@ -120,9 +120,10 @@ async function dash(){
     if(one)k=[['TOTAL EMPLOYEES',t0.t,''],['CONFIRMED WORKING',t0.w,'var(--w)'],['LEAVE / HOLIDAY',t0.l,'var(--l)'],['PENDING',t0.p,'var(--p)'],['WORKING RATE',pc(t0.w,t0.t),''],['RESPONSE RATE',pc(t0.w+t0.l,t0.t),'']];
     else{const lo=dl.reduce((a,b)=>b.w<a.w?b:a),hi=dl.reduce((a,b)=>b.w>a.w?b:a);
       k=[['TOTAL EMPLOYEES',t0.t,''],['PENDING',t0.p,'var(--p)'],['RESPONSE RATE',pc(t0.t-t0.p,t0.t),''],['LOWEST WORKING · '+sd(lo.date),lo.w+' ('+pc(lo.w,lo.t)+')','var(--bad)'],['HIGHEST WORKING · '+sd(hi.date),hi.w+' ('+pc(hi.w,hi.t)+')','var(--w)']];}
-    let h=`<h2>LONG HOLIDAY WORKFORCE SUMMARY <span class="zh">· 08–15 OCTOBER 2026</span></h2>
+    let h=`<h2>LONG HOLIDAY WORKFORCE SUMMARY <span class="zh">· 10–14 OCTOBER 2026</span></h2>
     <div class="chips"><b>วันที่ / 日期:</b> ${D.map(d=>`<label><input type="checkbox" ${F.dates.includes(d)?'checked':''} onchange="tg('${d}',this.checked)"> ${sd(d)}</label>`).join('')}<button onclick="F.dates=D.slice();dash()">ทุกวัน / 全部</button></div>
-    <div class="row" style="margin-top:8px">${sel('shift',r.opts.shift)}${sel('type',r.opts.type)}${sel('dept',r.opts.dept)}${one?'':`<select onchange="F.m=this.value;dash()">${MT.map(x=>`<option value="${x[0]}"${F.m==x[0]?' selected':''}>${x[1]}</option>`).join('')}</select>`}</div>
+    <div class="row" style="margin-top:8px">${sel('shift',r.opts.shift)}${sel('type',r.opts.type)}${sel('dept',r.opts.dept)}${one?'':`<select onchange="F.m=this.value;dash()">${MT.map(x=>`<option value="${x[0]}"${F.m==x[0]?' selected':''}>${x[1]}</option>`).join('')}</select>`}<button class="pri" id="xb" onclick="xl()">ดาวน์โหลด Excel / 下載 Excel</button><span id="xm" class="zh"></span></div>
+    <div class="zh" style="margin-top:4px">ไฟล์ Excel สรุปทั้งช่วง 10–14 ต.ค. ไม่ขึ้นกับตัวกรอง / Excel 匯出整段期間，不受篩選影響</div>
     <div class="kpi">${k.map(x=>`<div><span>${x[0]}</span><b${x[2]?` style="color:${x[2]}"`:''}>${x[1]}</b></div>`).join('')}</div>
     <div class="lg"><span><i style="background:var(--w)"></i>Working / มาทำงาน</span><span><i style="background:var(--l)"></i>Leave/Holiday / ลา-หยุด</span><span><i style="background:var(--p)"></i>Pending / รอตอบ</span></div>
     <h3>Daily Workforce Summary</h3><div class="wrap"><table><tr><th>Date</th><th>Total</th><th>Working</th><th>Working %</th><th>Leave/Holiday</th><th>Leave %</th><th>Pending</th><th></th></tr>${dl.map(o=>`<tr><td>${sd(o.date)}</td><td>${o.t}</td><td>${o.w}</td><td>${pc(o.w,o.t)}</td><td>${o.l}</td><td>${pc(o.l,o.t)}</td><td>${o.p}</td><td>${bar(o)}</td></tr>`).join('')}</table></div>`;
@@ -132,6 +133,55 @@ async function dash(){
     dsh.innerHTML=h;
   }catch(e){dsh.innerHTML=err(e.message)}
 }
+/* ---------- Excel export (ExcelJS loaded only when clicked) ---------- */
+function ld(u){return new Promise((ok,no)=>{if(window.ExcelJS)return ok();const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>no(new Error('โหลดตัวสร้าง Excel ไม่ได้ / 無法載入 Excel 元件'));document.head.appendChild(s)})}
+function wbBuild(ExcelJS,r,ls){
+  const wb=new ExcelJS.Workbook(),so=d=>+d.slice(8)+' Oct',R=(a,b)=>b?a/b:0;
+  const add=(name,hd,rows,pct)=>{
+    pct=pct||[];const ws=wb.addWorksheet(name,{views:[{state:'frozen',ySplit:1}]});
+    ws.addRow(hd);rows.forEach(x=>ws.addRow(x));
+    const h=ws.getRow(1);h.font={bold:true,color:{argb:'FFFFFFFF'}};h.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+    h.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F5C4A'}}});
+    ws.eachRow((row,n)=>{if(n>1)pct.forEach(i=>{row.getCell(i+1).numFmt='0.00%'})});
+    hd.forEach((t,i)=>{let w=String(t).length;rows.forEach(x=>{w=Math.max(w,String(x[i]==null?'':x[i]).length)});ws.getColumn(i+1).width=Math.min(Math.max(w+2,10),42)});
+    ws.autoFilter={from:{row:1,column:1},to:{row:1,column:hd.length}};
+    return ws;
+  };
+  const info=wb.addWorksheet('Info');info.getColumn(1).width=30;info.getColumn(2).width=70;
+  [['LONG HOLIDAY WORKFORCE SUMMARY'],['Period','10–14 October 2026'],['Generated',new Date().toLocaleString('en-GB')],['Total active employees',r.daily[0].t],
+   ['Working','Employees who explicitly selected Working / เลือกมาทำงานปกติ'],['Leave/Holiday','Employees who selected any leave or holiday / เลือกลาหรือหยุด'],
+   ['Pending','Employees who have NOT submitted — not counted as working / ยังไม่ส่ง ไม่นับเป็นมาทำงาน'],['Working %','Working / Total employees'],['Response rate','(Working + Leave/Holiday) / Total employees']]
+   .forEach(x=>info.addRow(x));
+  info.getRow(1).font={bold:true,size:14,color:{argb:'FF0F5C4A'}};
+  add('Daily Summary',['Date','Total','Working','Working %','Leave/Holiday','Leave %','Pending'],
+    r.daily.map(o=>[+o.date.slice(8)+' Oct 2026',o.t,o.w,R(o.w,o.t),o.l,R(o.l,o.t),o.p]),[3,5]);
+  const G=(name,lab,g)=>{
+    const hd=[lab,'Total'];D.forEach(d=>hd.push(so(d)+' Working',so(d)+' Leave/Holiday',so(d)+' Pending',so(d)+' Working %'));
+    add(name,hd,Object.keys(g).sort().map(k=>{const a=g[k],x=[k,a[0].t];a.forEach(o=>x.push(o.w,o.l,o.p,R(o.w,o.t)));return x}),D.map((_,i)=>5+i*4));
+  };
+  G('Shift Summary','Shift',r.shift);G('DL-IDL Summary','Employee Type',r.type);G('Type x Shift','Type / Shift',r.matrix);G('Department Summary','Department',r.dept);
+  add('Leave Breakdown',['Leave type'].concat(D.map(so)),OPT.slice(1).map(o=>[o[1]+' / '+o[2]].concat(r.daily.map(x=>x.lt[o[0]]||0))));
+  if(ls){
+    add('Pending Employees',['Employee ID','Full Name','Type','Department','Shift'],ls.p);
+    add('Employee Detail',['Employee ID','Full Name','Type','Department','Shift'].concat(D.map(so)),ls.d.map(x=>x.slice(0,5).concat(x.slice(5).map(lbl))));
+  }
+  return wb;
+}
+async function xl(){
+  const b=document.getElementById('xb'),m=document.getElementById('xm');b.disabled=true;m.textContent=' กำลังสร้างไฟล์… / 產生中…';
+  try{
+    await ld('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
+    const r=await api({a:'dash',pin:pin.value,dates:D,shift:'',type:'',dept:''});if(!r.ok)throw new Error(r.error);
+    let ls=null;
+    if(r.role=='HR'){const x=await Promise.all([api({a:'list',pin:pin.value,mode:'pending',all:1}),api({a:'list',pin:pin.value,mode:'detail',all:1})]);
+      if(!x[0].ok||!x[1].ok)throw new Error(x[0].error||x[1].error);ls={p:x[0].rows,d:x[1].rows}}
+    const buf=await wbBuild(window.ExcelJS,r,ls).xlsx.writeBuffer();
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    a.download='Holiday-Workforce-Summary_10-14Oct2026.xlsx';a.click();m.textContent='';
+  }catch(e){m.innerHTML=' '+(ERR[e.message]||esc(e.message))}
+  b.disabled=false;
+}
+/*END_EXPORT*/
 async function lst(mode,page){
   lst_.innerHTML='';const box=document.getElementById('lst');box.innerHTML='<p class="zh">กำลังโหลด… / 載入中…</p>';
   try{
